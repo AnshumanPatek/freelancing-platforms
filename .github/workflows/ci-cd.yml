@@ -77,11 +77,5 @@ jobs:
           docker stop job-portal-container || true
           docker rm job-portal-container || true
           
-          # Run the new container
-          docker run -d \
-            --name job-portal-container \
-            -p 8080:8080 \
-            -e MONGODB_URI=${{ secrets.MONGODB_URI }} \
-            -e JWT_SECRET=${{ secrets.JWT_SECRET || 'your_jwt_secret_key' }} \
-            -e PORT=8080 \
-            ${{ secrets.DOCKERHUB_USERNAME }}/job-portal:latest 
+          # Run the new container (all on one line)
+          docker run -d --name job-portal-container -p 8080:8080 -e MONGODB_URI="${{ secrets.MONGODB_URI }}" -e JWT_SECRET="${{ secrets.JWT_SECRET || 'your_jwt_secret_key' }}" -e PORT=8080 ${{ secrets.DOCKERHUB_USERNAME }}/job-portal:latest 
