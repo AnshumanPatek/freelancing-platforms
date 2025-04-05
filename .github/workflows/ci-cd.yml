@@ -66,7 +66,22 @@ jobs:
         username: ${{ secrets.SERVER_USERNAME }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
-          cd /path/to/deployment
+          # Create directory if it doesn't exist
+          mkdir -p ~/job-portal
+          cd ~/job-portal
+          
+          # Pull the latest image
           docker pull ${{ secrets.DOCKERHUB_USERNAME }}/job-portal:latest
-          docker-compose down
-          docker-compose up -d 
+          
+          # Stop any running container with the same name
+          docker stop job-portal-container || true
+          docker rm job-portal-container || true
+          
+          # Run the new container
+          docker run -d \
+            --name job-portal-container \
+            -p 8080:8080 \
+            -e MONGODB_URI=${{ secrets.MONGODB_URI || 'mongodb://host.docker.internal:27017/job-portal' }} \
+            -e JWT_SECRET=${{ secrets.JWT_SECRET || 'your_jwt_secret_key' }} \
+            -e PORT=8080 \
+            ${{ secrets.DOCKERHUB_USERNAME }}/job-portal:latest 
