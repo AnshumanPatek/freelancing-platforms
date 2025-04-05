@@ -122,3 +122,36 @@ Import the included Postman collection and environment files to test the API:
 ## License
 
 MIT 
+
+## CI/CD Pipeline
+
+This project uses GitHub Actions for Continuous Integration and Deployment:
+
+### Pipeline Stages
+
+1. **Testing**: Runs Jest tests to ensure code quality
+2. **Build**: Creates a Docker image of the application
+3. **Push**: Uploads the image to Docker Hub
+4. **Deploy**: Deploys the application to the production environment
+
+### Required Secrets
+
+The following secrets need to be configured in your GitHub repository:
+
+- `DOCKERHUB_USERNAME`: Your Docker Hub username
+- `DOCKERHUB_TOKEN`: Docker Hub access token
+- `SERVER_HOST`: Deployment server hostname/IP
+- `SERVER_USERNAME`: SSH username for deployment
+- `SERVER_SSH_KEY`: SSH private key for deployment
+
+### Manual Deployment
+
+You can also manually deploy using Docker:
+
+```bash
+# Pull the latest image
+docker pull yourusername/job-portal:latest
+
+# Run with docker-compose
+docker-compose up -d
+``` 
