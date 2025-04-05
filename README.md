@@ -1,4 +1,4 @@
-# Job Portal API
+# Freelancing Platforms API
 
 A RESTful API for a freelancing job portal where employers can post jobs and freelancers can bid on them.
 
