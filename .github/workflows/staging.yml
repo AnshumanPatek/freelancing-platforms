@@ -1,8 +1,10 @@
-name: Staging Deployment
+name: Staging Docker Deployment
 
 on:
   push:
-    branches: [ develop ]
+    branches: [ stage ]
+  pull_request:
+    branches: [ stage]
 
 jobs:
   test:
@@ -79,16 +81,77 @@ jobs:
           docker stop job-portal-staging-container || true
           docker rm job-portal-staging-container || true
           
-          # Run the new staging container
-          docker run -d --name job-portal-staging-container -p 3001:5000 \
+          # Clean up old images to save space
+          docker image prune -f
+          
+          # Run the new staging container with health check
+          docker run -d --name job-portal-staging-container \
+            -p 3001:5000 \
+            --restart unless-stopped \
+            --health-cmd="curl -f http://localhost:5000/ || exit 1" \
+            --health-interval=30s \
+            --health-timeout=10s \
+            --health-retries=3 \
             -e MONGODB_URI="${{ secrets.STAGING_MONGODB_URI }}" \
             -e JWT_SECRET="${{ secrets.STAGING_JWT_SECRET }}" \
             -e PORT=5000 \
             -e NODE_ENV=staging \
             ${{ secrets.DOCKERHUB_USERNAME }}/job-portal:staging
+          
+          # Wait a moment for container to start
+          sleep 10
+          
+          # Check if container is running
+          if docker ps | grep -q job-portal-staging-container; then
+            echo "✅ Staging container is running successfully"
+            docker ps | grep job-portal-staging-container
+          else
+            echo "❌ Staging container failed to start"
+            docker logs job-portal-staging-container
+            exit 1
+          fi
+
+    - name: Verify staging deployment
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.STAGING_SERVER_HOST }}
+        username: ${{ secrets.STAGING_SERVER_USERNAME }}
+        key: ${{ secrets.STAGING_SERVER_SSH_KEY }}
+        script: |
+          # Test the staging API
+          echo "🧪 Testing staging API..."
+          
+          # Wait for the service to be fully ready
+          sleep 5
+          
+          # Test health endpoint
+          if curl -f http://localhost:3001/ > /dev/null 2>&1; then
+            echo "✅ Staging API health check passed"
+          else
+            echo "❌ Staging API health check failed"
+            docker logs job-portal-staging-container --tail 20
+            exit 1
+          fi
+          
+          # Test API documentation endpoint
+          if curl -f http://localhost:3001/api-docs > /dev/null 2>&1; then
+            echo "✅ Staging API documentation is accessible"
+          else
+            echo "⚠️  API documentation endpoint not accessible (this might be normal)"
+          fi
 
     - name: Staging deployment notification
       run: |
-        echo "🚀 Staging deployment completed successfully!"
-        echo "Staging URL: http://${{ secrets.STAGING_SERVER_HOST }}:3001"
-        echo "API Documentation: http://${{ secrets.STAGING_SERVER_HOST }}:3001/api-docs"
+        echo "🎉 Staging Deployment Completed Successfully!"
+        echo "==========================================="
+        echo "✅ Tests passed"
+        echo "✅ Docker image built and pushed"
+        echo "✅ Staging server deployment successful"
+        echo "✅ Health checks passed"
+        echo ""
+        echo "🌐 Staging Environment Access:"
+        echo "   URL: http://${{ secrets.STAGING_SERVER_HOST }}:3001"
+        echo "   API Documentation: http://${{ secrets.STAGING_SERVER_HOST }}:3001/api-docs"
+        echo "   Health Check: http://${{ secrets.STAGING_SERVER_HOST }}:3001/"
+        echo ""
+        echo "🧪 Ready for testing before production deployment!"

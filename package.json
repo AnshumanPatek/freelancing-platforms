@@ -13,6 +13,10 @@
     "docker:up:detached": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:dev": "docker-compose -f docker-compose.dev.yml up",
+    "docker:staging": "docker-compose -f docker-compose.staging.yml up",
+    "docker:staging:detached": "docker-compose -f docker-compose.staging.yml up -d",
+    "docker:staging:down": "docker-compose -f docker-compose.staging.yml down",
+    "docker:staging:local": "docker-compose -f docker-compose.staging.yml --profile local-db up",
     "docker:logs": "docker-compose logs -f"
   },
   "keywords": [],

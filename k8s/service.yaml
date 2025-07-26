@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: job-portal-service
+  namespace: job-portal
+  labels:
+    app: job-portal
+spec:
+  selector:
+    app: job-portal
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 5000
+  type: ClusterIP
