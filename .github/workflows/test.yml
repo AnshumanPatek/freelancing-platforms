@@ -1,0 +1,78 @@
+name: Test Pipeline
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+  push:
+    branches: [ feature/*, bugfix/*, hotfix/* ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
+
+    - name: Install Jest
+      run: npm install --save-dev jest
+
+    - name: Update test script
+      run: |
+        sed -i 's/"test": "echo \\"Error: no test specified\\" && exit 1"/"test": "jest"/' package.json
+
+    - name: Run tests
+      run: npm test
+
+    - name: Run linting (if available)
+      run: |
+        if npm list eslint > /dev/null 2>&1; then
+          npm run lint
+        else
+          echo "ESLint not found, skipping linting"
+        fi
+      continue-on-error: true
+
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        if [ -f package-lock.json ]; then
+          npm ci
+        else
+          npm install
+        fi
+
+    - name: Run security audit
+      run: npm audit --audit-level=moderate
+      continue-on-error: true
+
+    - name: Check for vulnerabilities
+      run: |
+        echo "🔍 Security scan completed"
+        echo "Review any vulnerabilities above before merging"
